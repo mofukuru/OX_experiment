@@ -2716,3 +2716,156 @@ class CQCNN_sampler_HE_network(nn.Module):
 #         x = torch.cat([state, state2], dim=0)
 #         x = self.qcnn(x)
 #         return x
+
+class QCNN_param_changed(nn.Module):
+    def __init__(self, board_size=3, param_weight=np.pi/6, circuit_name=None):
+        super().__init__()
+        self.board_size=board_size
+        self.backend_num_qubits=set_backend.num_qubits
+        if circuit_name == None:
+            print("Error: there is no circuit indicated.")
+            exit(1)
+        else:
+            self.circuit, self.feature_map_parameters, self.ansatz_parameters = \
+                QCNNComponent(
+                    18,
+                    ["conv", "pool"],
+                    [0, 2, 4, 6, 8, 10, 12, 14, 16],
+                    [1, 3, 5, 7, 9, 11, 13, 15, 17]
+                ).create_qcnn(circuit_name, reps=1)
+                
+        if REAL_DEVICE:
+            self.op1 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "ZIIIIIIIIIIIIIIIII", 1)])
+            self.op2 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIZIIIIIIIIIIIIIII", 1)])
+            self.op3 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIZIIIIIIIIIIIII", 1)])
+            self.op4 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIZIIIIIIIIIII", 1)])
+            self.op5 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIZIIIIIIIII", 1)])
+            self.op6 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIIIZIIIIIII", 1)])
+            self.op7 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIIIIIZIIIII", 1)])
+            self.op8 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIIIIIIIZIII", 1)])
+            self.op9 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIIIIIIIIIZI", 1)])
+        else:
+            self.op1 = SparsePauliOp.from_list([("ZIIIIIIIIIIIIIIIII", 1)])
+            self.op2 = SparsePauliOp.from_list([("IIZIIIIIIIIIIIIIII", 1)])
+            self.op3 = SparsePauliOp.from_list([("IIIIZIIIIIIIIIIIII", 1)])
+            self.op4 = SparsePauliOp.from_list([("IIIIIIZIIIIIIIIIII", 1)])
+            self.op5 = SparsePauliOp.from_list([("IIIIIIIIZIIIIIIIII", 1)])
+            self.op6 = SparsePauliOp.from_list([("IIIIIIIIIIZIIIIIII", 1)])
+            self.op7 = SparsePauliOp.from_list([("IIIIIIIIIIIIZIIIII", 1)])
+            self.op8 = SparsePauliOp.from_list([("IIIIIIIIIIIIIIZIII", 1)])
+            self.op9 = SparsePauliOp.from_list([("IIIIIIIIIIIIIIIIZI", 1)])
+        self.observable = [self.op9, self.op8, self.op7, self.op6, self.op5, self.op4, self.op3, self.op2, self.op1]
+        self.pm = generate_preset_pass_manager(backend=set_backend.backend, optimization_level=1)
+        self.isa_circuit = self.pm.run(self.circuit)
+        # EstimatorQNNはNG
+        self.qnn = EstimatorQNN(
+            # estimator=Estimator(backend, options={"shots": 1000}),
+            estimator=Estimator(
+                backend=set_backend.backend,
+                options={'shots':1000}
+            ) if REAL_DEVICE else BackendEstimator(
+                backend=set_backend.backend,
+                options={"shots":1000, "seed_simulator": seed}
+            ),
+            circuit=self.isa_circuit,
+            observables=self.observable,
+            input_params=param_weight * self.feature_map_parameters,
+            weight_params=self.ansatz_parameters,
+            input_gradients=True,
+        )
+        # [goal]input_gradients=False and no using TorchConnector
+        self.qcnn = nn.Sequential(
+            TorchConnector(self.qnn),
+            nn.Tanh()
+        )
+
+    def forward(self, state):
+        x = torch.flatten(state)
+        x = x.repeat(1, 2)
+        x = self.qcnn(x)
+        return x
+    
+class QNN_param_changed(nn.Module):
+    def __init__(self, board_size=3, param_weight=np.pi/6, circuit_name=None, num_of_qubit=9, featuremap_reps=1, ansatz_reps=1):
+        super().__init__()
+        self.board_size=board_size
+        self.backend_num_qubits=set_backend.num_qubits
+        if circuit_name == None:
+            print("Error: there is no circuit indicated.")
+            exit(1)
+        elif circuit_name == "ZR":
+            self.circuit, self.feature_map_parameters, self.ansatz_parameters = \
+                QNNComponent(num_of_qubit).ZR(featuremap_reps, ansatz_reps)
+        elif circuit_name == "ZZR":
+            self.circuit, self.feature_map_parameters, self.ansatz_parameters = \
+                QNNComponent(num_of_qubit).ZZR(featuremap_reps, ansatz_reps)
+        elif circuit_name == "TR":
+            self.circuit, self.feature_map_parameters, self.ansatz_parameters = \
+                QNNComponent(num_of_qubit).TR(featuremap_reps, ansatz_reps)
+        elif circuit_name == "HR":
+            self.circuit, self.feature_map_parameters, self.ansatz_parameters = \
+                QNNComponent(num_of_qubit).HR(featuremap_reps, ansatz_reps)
+        elif circuit_name == "ZE":
+            self.circuit, self.feature_map_parameters, self.ansatz_parameters = \
+                QNNComponent(num_of_qubit).ZE(featuremap_reps, ansatz_reps)
+        elif circuit_name == "ZZE":
+            self.circuit, self.feature_map_parameters, self.ansatz_parameters = \
+                QNNComponent(num_of_qubit).ZZE(featuremap_reps, ansatz_reps)
+        elif circuit_name == "TE":
+            self.circuit, self.feature_map_parameters, self.ansatz_parameters = \
+                QNNComponent(num_of_qubit).TE(featuremap_reps, ansatz_reps)
+        elif circuit_name == "HE":
+            self.circuit, self.feature_map_parameters, self.ansatz_parameters = \
+                QNNComponent(num_of_qubit).HE(featuremap_reps, ansatz_reps)
+                
+        if REAL_DEVICE:
+            self.op1 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "ZIIIIIIIIIIIIIIIII", 1)])
+            self.op2 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIZIIIIIIIIIIIIIII", 1)])
+            self.op3 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIZIIIIIIIIIIIII", 1)])
+            self.op4 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIZIIIIIIIIIII", 1)])
+            self.op5 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIZIIIIIIIII", 1)])
+            self.op6 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIIIZIIIIIII", 1)])
+            self.op7 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIIIIIZIIIII", 1)])
+            self.op8 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIIIIIIIZIII", 1)])
+            self.op9 = SparsePauliOp.from_list([("I"*(self.backend_num_qubits-18) + "IIIIIIIIIIIIIIIIZI", 1)])
+        else:
+            self.op1 = SparsePauliOp.from_list([("ZIIIIIIIIIIIIIIIII", 1)])
+            self.op2 = SparsePauliOp.from_list([("IIZIIIIIIIIIIIIIII", 1)])
+            self.op3 = SparsePauliOp.from_list([("IIIIZIIIIIIIIIIIII", 1)])
+            self.op4 = SparsePauliOp.from_list([("IIIIIIZIIIIIIIIIII", 1)])
+            self.op5 = SparsePauliOp.from_list([("IIIIIIIIZIIIIIIIII", 1)])
+            self.op6 = SparsePauliOp.from_list([("IIIIIIIIIIZIIIIIII", 1)])
+            self.op7 = SparsePauliOp.from_list([("IIIIIIIIIIIIZIIIII", 1)])
+            self.op8 = SparsePauliOp.from_list([("IIIIIIIIIIIIIIZIII", 1)])
+            self.op9 = SparsePauliOp.from_list([("IIIIIIIIIIIIIIIIZI", 1)])
+        self.observable = [self.op9, self.op8, self.op7, self.op6, self.op5, self.op4, self.op3, self.op2, self.op1]
+        self.pm = generate_preset_pass_manager(backend=set_backend.backend, optimization_level=1)
+        self.isa_circuit = self.pm.run(self.circuit)
+        # EstimatorQNNはNG
+        self.qnn = EstimatorQNN(
+            # estimator=Estimator(backend, options={"shots": 1000}),
+            estimator=Estimator(
+                backend=set_backend.backend,
+                options={'shots':1000}
+            ) if REAL_DEVICE else BackendEstimator(
+                backend=set_backend.backend,
+                options={"shots":1000, "seed_simulator": seed}
+            ),
+            circuit=self.isa_circuit,
+            observables=self.observable,
+            input_params=param_weight * self.feature_map_parameters,
+            weight_params=self.ansatz_parameters,
+            input_gradients=True,
+        )
+        # [goal]input_gradients=False and no using TorchConnector
+        self.qcnn = nn.Sequential(
+            TorchConnector(self.qnn),
+            nn.Tanh()
+        )
+
+    def forward(self, state):
+        x = torch.flatten(state)
+        x = x.repeat(1, 2)
+        x = self.qcnn(x)
+        return x
+    

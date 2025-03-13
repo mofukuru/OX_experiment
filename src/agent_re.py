@@ -64,6 +64,8 @@ from src.network_re import (
     # QCNN_ZZ_network_different_state,
     # QCNN_T_network_different_state,
     # QCNN_H_network_different_state,
+    QCNN_param_changed,
+    QNN_param_changed
 )
 
 #%% seed値の固定
@@ -356,6 +358,150 @@ class QCNNAgent(Agent):
     def eval(self):
         super().eval()
         self.QCNN.eval()
+
+    def get_qvalues(self, state):
+        state = state.to(torch.float32).to(self.device)
+        state = state.view(-1)
+        qvalues = self.QCNN(state).view(self.board_size, self.board_size)
+        return qvalues
+
+    def _get_the_best(self, board, possible_moves):
+        qvalues = self.get_qvalues(board)
+        best_move = None
+        best_q_value = -float('inf')
+        for mv_x, mv_y in possible_moves:
+            q_value = qvalues[mv_x, mv_y]
+            if q_value > best_q_value:
+                best_q_value = q_value
+                best_move = (mv_x, mv_y)
+        return best_move, best_q_value
+
+    def update(self, tictactoc, state, action, reward):
+        if self.stop:
+            return None
+
+        with torch.no_grad():
+            board = self.check_state(tictactoc)
+            moves = self.check_actions(tictactoc)
+            _, best_value = self._get_the_best(board, moves)
+            next_max = max(0, best_value)
+            target_q = torch.tensor(reward + self.discount * next_max)
+            target_q = target_q.to(torch.float32).to(self.device)
+
+        x, y = action
+        old_qvalue = self.get_qvalues(state)[x, y]
+        loss = nn.functional.huber_loss(old_qvalue, target_q)
+        self.loss_v = loss.item()
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        return self.loss_v
+    
+class QCNNAgent_weight_change(Agent):
+    def __init__(self, player=1, board_size=3, network=None):
+        super().__init__(player)
+        self.discount = 0.9
+        self.epsilon = 0.1
+        self.board_size = board_size
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+        NN = QCNN_param_changed(circuit_name=network)
+
+        self.QCNN = NN
+        self.QCNN.to(self.device)
+        self.optimizer = optim.Adam(self.QCNN.parameters())
+
+    def action(self, tictactoc: classmethod) -> int:
+        board = self.check_state(tictactoc)
+        possible_actions = self.check_actions(tictactoc)
+        if len(possible_actions) == 0:
+            return None
+        # epsilon-greedy法
+        if not self.stop and random.random() < self.epsilon:
+            return random.choice(possible_actions)
+        else:
+            best_action, _ = self._get_the_best(board, possible_actions)
+            return best_action
+
+    def train(self):
+        super().train()
+        self.QCNN.train()
+
+    def eval(self):
+        super().eval()
+        self.QCNN.eval()
+
+    def get_qvalues(self, state):
+        state = state.to(torch.float32).to(self.device)
+        state = state.view(-1)
+        qvalues = self.QCNN(state).view(self.board_size, self.board_size)
+        return qvalues
+
+    def _get_the_best(self, board, possible_moves):
+        qvalues = self.get_qvalues(board)
+        best_move = None
+        best_q_value = -float('inf')
+        for mv_x, mv_y in possible_moves:
+            q_value = qvalues[mv_x, mv_y]
+            if q_value > best_q_value:
+                best_q_value = q_value
+                best_move = (mv_x, mv_y)
+        return best_move, best_q_value
+
+    def update(self, tictactoc, state, action, reward):
+        if self.stop:
+            return None
+
+        with torch.no_grad():
+            board = self.check_state(tictactoc)
+            moves = self.check_actions(tictactoc)
+            _, best_value = self._get_the_best(board, moves)
+            next_max = max(0, best_value)
+            target_q = torch.tensor(reward + self.discount * next_max)
+            target_q = target_q.to(torch.float32).to(self.device)
+
+        x, y = action
+        old_qvalue = self.get_qvalues(state)[x, y]
+        loss = nn.functional.huber_loss(old_qvalue, target_q)
+        self.loss_v = loss.item()
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        return self.loss_v
+    
+class QAgent(Agent):
+    def __init__(self, player=1, board_size=3, network=None):
+        super().__init__(player)
+        self.discount = 0.9
+        self.epsilon = 0.1
+        self.board_size = board_size
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+        NN = QNN_param_changed(circuit_name=network)
+
+        self.QNN = NN
+        self.QNN.to(self.device)
+        self.optimizer = optim.Adam(self.QNN.parameters())
+
+    def action(self, tictactoc: classmethod) -> int:
+        board = self.check_state(tictactoc)
+        possible_actions = self.check_actions(tictactoc)
+        if len(possible_actions) == 0:
+            return None
+        # epsilon-greedy法
+        if not self.stop and random.random() < self.epsilon:
+            return random.choice(possible_actions)
+        else:
+            best_action, _ = self._get_the_best(board, possible_actions)
+            return best_action
+
+    def train(self):
+        super().train()
+        self.QNN.train()
+
+    def eval(self):
+        super().eval()
+        self.QNN.eval()
 
     def get_qvalues(self, state):
         state = state.to(torch.float32).to(self.device)

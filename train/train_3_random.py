@@ -1,6 +1,0 @@
-import os
-os.environ['CUDA_VISIBLE_DEVICES'] = "3"
-
-from train_vs_random import train_cqc_agent_qcnn, train_cqc_agent_sampler_former, train_cqc_agent_sampler_latter, train_cqc_agent_estimator_former, train_cqc_agent_estimator_latter, train_qcnn_agent
-
-train_cqc_agent_sampler_latter(7)
