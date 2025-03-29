@@ -156,18 +156,19 @@ class Env:
                 if self.tictactoc.is_valid_action(action, player=1):
                     self.tictactoc.place(action, player=1)
                     self.steps += 1
-                    ### ここにノイズを加える
                     if type(self.agent1) != RandomPolicy:
                         with torch.no_grad():
                             iter = 0
-                            alpha = 0.1
+                            alpha = 0.2
+                            noise_strength = lambda d: 1 / (10**(-alpha/10*d)) -1
+                            noise = noise_strength(self.agent1.d)
                             if self.agent1.type == 1:
                                 iter = self.agent1.n_qubits*2*2
                             elif self.agent1.type == 2:
                                 iter = self.agent1.n_qubits*2
                             for i in range(iter):
-                                if self.agent1.noised and random.random() < alpha:
-                                    self.agent1.optimizer.param_groups[0]["params"][2][i] = torch.normal(mean=self.agent1.optimizer.param_groups[0]["params"][2][i].item(), std=1, size=(1,1))
+                                if self.agent1.noised:
+                                    self.agent1.optimizer.param_groups[0]["params"][2].data[i] = torch.normal(mean=self.agent1.optimizer.param_groups[0]["params"][2].data[i].item(), std=noise, size=(1,1))
 
                     if train and not self.agent1.stop:
                         reward = 0
@@ -194,18 +195,19 @@ class Env:
                 if self.tictactoc.is_valid_action(action, player=-1):
                     self.tictactoc.place(action, player=-1)
                     self.steps += 1
-                    ### ここにノイズを加える
                     if type(self.agent2) != RandomPolicy:
                         with torch.no_grad():
                             iter = 0
-                            alpha = 0.1
+                            alpha = 0.2
+                            noise_strength = lambda d: 1 / (10**(-alpha/10*d)) -1
+                            noise = noise_strength(self.agent2.d)
                             if self.agent2.type == 1:
                                 iter = self.agent2.n_qubits*2*2
                             elif self.agent2.type == 2:
                                 iter = self.agent2.n_qubits*2
                             for i in range(iter):
-                                if self.agent2.noised and random.random() < alpha:
-                                    self.agent2.optimizer.param_groups[0]["params"][2][i] = torch.normal(mean=self.agent2.optimizer.param_groups[0]["params"][2][i].item(), std=1, size=(1,1))
+                                if self.agent2.noised:
+                                    self.agent2.optimizer.param_groups[0]["params"][2].data[i] = torch.normal(mean=self.agent2.optimizer.param_groups[0]["params"][2].data[i].item(), std=noise, size=(1,1))
 
                     if train and not self.agent2.stop:
                         reward = 0
