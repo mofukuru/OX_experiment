@@ -130,7 +130,7 @@ def evaluate_cqcnn_for_network(
     ):
     import torch
     from src.agent import RandomPolicy, CQCAgent_network
-    from src.env_for_network import Env
+    from src.env import Env
 
     rate_per_NN = []
     randagent = RandomPolicy()
@@ -158,7 +158,7 @@ def evaluate_cqcnn_for_network(
 
         agent.eval()
 
-        environment = Env(agent, randagent, elorate=elorate)
+        environment = Env(agent, randagent, noised_network=True, elorate=elorate)
         rate = environment.train(10000)
         elorate = environment.elorate
         rate_per_NN.append(rate)

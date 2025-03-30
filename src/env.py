@@ -1,9 +1,11 @@
 import tqdm
+import torch
 from typing import Final
 import matplotlib.pyplot as plt
 import numpy as np
 
 from src.tictactoe import TicTacToe
+from src.agent import RandomPolicy
 
 SEED: Final[int] = 42
 
@@ -17,7 +19,7 @@ def set_seed(seed: int=42):
 set_seed(SEED)
 
 class Env:
-    def __init__(self, agent1, agent2, tictactoc=TicTacToe(), elorate=1500):
+    def __init__(self, agent1, agent2, noised_network=False, tictactoc=TicTacToe(), elorate=1500):
         self.agent1 = agent2
         self.agent2 = agent1
         self.tictactoc = tictactoc
@@ -28,6 +30,7 @@ class Env:
         self.Draw = []
         self.rate =  [elorate]
         self.elorate = 1500
+        self.noised_network = noised_network
 
     def _get_reward_for_agent1(self):
         winner = self.tictactoc.checkwinner()
@@ -135,16 +138,16 @@ class Env:
         print(f"  {record[1]}      {record[0]}      {record[-1]}  ")
         self.plot_loss(train)
         ### change
-        with open("test.txt", "a") as f:
+        # with open("test.txt", "a") as f:
             # print(self.P1, file=f)
             # f.write("\n")
-            print(self.rate, file=f)
-            f.write("\n")
+            # print(self.rate, file=f)
+            # f.write("\n")
         print(self.P1)
         print(self.rate)
         r = self.rate.copy()
-        self.plot_elorate(rate_update)
-        self.plot_winrate()
+        # self.plot_elorate(rate_update)
+        # self.plot_winrate()
         return r
 
     def game_exec(self, train=False, visualize=True):
@@ -162,6 +165,24 @@ class Env:
                 if self.tictactoc.is_valid_action(action, player=1):
                     self.tictactoc.place(action, player=1)
                     self.steps += 1
+                    if type(self.agent1) != RandomPolicy and self.noised_network:
+                        with torch.no_grad():
+                            iter = 0
+                            alpha = 0.2
+                            noise_strength = lambda d: 10**(alpha/10*d) - 1
+                            noise = noise_strength(self.agent1.d)
+                            if self.agent1.network_model == 1:
+                                iter = self.agent1.n_qubits*2*2
+                            elif self.agent1.network_model == 2:
+                                iter = self.agent1.n_qubits*2
+                            for i in range(iter):
+                                if self.agent1.noised:
+                                    self.agent1.optimizer.param_groups[0]["params"][2].data[i] = \
+                                        torch.normal(
+                                            mean=self.agent1.optimizer.param_groups[0]["params"][2].data[i].item(),
+                                            std=noise,
+                                            size=(1,1)
+                                        )
                     if train and not self.agent1.stop:
                         reward = 0
                         if self.tictactoc.gameover():
@@ -187,6 +208,24 @@ class Env:
                 if self.tictactoc.is_valid_action(action, player=-1):
                     self.tictactoc.place(action, player=-1)
                     self.steps += 1
+                    if type(self.agent2) != RandomPolicy and self.noised_network:
+                        with torch.no_grad():
+                            iter = 0
+                            alpha = 0.2
+                            noise_strength = lambda d: 10.0**(alpha/10.0*d) - 1
+                            noise = noise_strength(self.agent2.d)
+                            if self.agent2.type == 1:
+                                iter = self.agent2.n_qubits*2*2
+                            elif self.agent2.type == 2:
+                                iter = self.agent2.n_qubits*2
+                            for i in range(iter):
+                                if self.agent2.noised:
+                                    self.agent2.optimizer.param_groups[0]["params"][2].data[i] =\
+                                    torch.normal(
+                                        mean=self.agnet2.optimizer.param_groups[0]["params"][2].data[i].item(),
+                                        std=noise,
+                                        size=(1,1)
+                                    )
                     if train and not self.agent2.stop:
                         reward = 0
                         if self.tictactoc.gameover():
@@ -298,8 +337,8 @@ class Environment:
         print("result:")
         print("Player1   Draw   Player2")
         print(f"  {record[1]}      {record[0]}      {record[-1]}  ")
-        self.plot_loss(train)
-        self.plot_winrate()
+        # self.plot_loss(train)
+        # self.plot_winrate()
 
     def game_exec(self, train=False, visualize=True):
         self.tictactoc.reset_board()
