@@ -310,6 +310,9 @@ def train_cqcnn_for_network(
         ansatz_reps=ansatz_reps,
         noised=noised_quantum_channel,
         distance=distance,
+        epsilon_start=1.0,  # 明示的に設定
+        epsilon_end=0.01,   # 明示的に設定
+        epsilon_decay=1000, # 明示的に設定
     )
     model_name = f"train_cqcnn_network_episodes_{total_episodes}_n_qubits_{n_qubits}_noise_{noised_quantum_channel}_dist_{distance}_embedding_{embedding_type}_ansatz_{ansatz_type}_networkmodel_{network_model}"
     if early_stopping:

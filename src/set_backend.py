@@ -35,17 +35,17 @@ noise_model.add_all_qubit_quantum_error(error, ["id"])
 #     set_as_default=True,
 # )
 # using account
-service = QiskitRuntimeService(
-    channel="ibm_cloud", token="<API_TOKEN>"
-)
+# service = QiskitRuntimeService(
+#     channel="ibm_cloud", token="<API_TOKEN>"
+# )
 ### The method of working in real device is in progress.
-REAL_DEVICE = True
+REAL_DEVICE = False
 
 # set backend
 if REAL_DEVICE:
     # if you use REAL_DEVICE, occuring errors
     # backend = service.get_backend("ibm_kawasaki")
-    backend = service.get_backend("ibm_torino")
+    # backend = service.get_backend("ibm_torino")
     # backend = service.get_backend("ibm_osaka")
     pass
 else:

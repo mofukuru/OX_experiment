@@ -960,13 +960,88 @@ class CQCAgent_network(Agent):
     def action(self, tictactoe: classmethod) -> int:
         board = self.check_state(tictactoe)
         possible_actions = self.check_actions(tictactoe)
+
         if not possible_actions:
             return None
         if not self.stop and random.random() < self.epsilon:
+            self.add_noise()
             return random.choice(possible_actions)
         else:
             best_action, _ = self._get_the_best(board, possible_actions)
+            self.add_noise()
             return best_action
+
+    def add_noise(self):
+        if self.noised:
+            with torch.no_grad():
+                iter = 0
+                alpha = 0.2
+                noise_strength = lambda d: 10.0 ** (alpha * d / 10.0) - 1
+                noise = noise_strength(self.d)
+                if self.network_model == 1:
+                    iter = self.n_qubits * 2 * 2
+                elif self.network_model == 2:
+                    iter = self.n_qubits * 2
+
+                # ノイズの適用を効率化（一度に全パラメータに適用）
+                if iter > 0:
+                    target_params = self.optimizer.param_groups[0]["params"][2]
+
+                    # パラメータの形状を取得
+                    param_shape = target_params.shape
+
+                    # パラメータがスカラーか多次元かを確認
+                    if param_shape == torch.Size([]):
+                        # スカラーの場合
+                        if iter == 1:
+                            # 単一要素の場合
+                            target_params.copy_(
+                                torch.normal(
+                                    mean=target_params.item(), std=noise
+                                )
+                            )
+                        else:
+                            # エラー（スカラーに複数要素を設定しようとしている）
+                            print(
+                                f"Warning: Cannot apply noise to scalar parameter when iter={iter}"
+                            )
+                    else:
+                        # 適用範囲が大きすぎる場合は調整
+                        actual_iter = min(
+                            iter, param_shape[0] if len(param_shape) > 0 else 0
+                        )
+
+                        # 対象のパラメータにのみノイズを適用
+                        for i in range(actual_iter):
+                            # 次元のチェック
+                            if i >= param_shape[0]:
+                                print(
+                                    f"Warning: Index {i} out of bounds for parameter shape {param_shape}"
+                                )
+                                continue
+
+                            # 1次元テンソルの場合
+                            if len(param_shape) == 1:
+                                target_params[i].copy_(
+                                    torch.normal(
+                                        mean=target_params[i].item(), std=noise
+                                    )
+                                )
+                            # 多次元テンソルの場合
+                            else:
+                                # サブテンソルを取得
+                                sub_tensor = target_params[i]
+                                # ノイズを生成（同じ形状）
+                                noise_tensor = torch.normal(
+                                    mean=0.0,
+                                    std=noise,
+                                    size=sub_tensor.shape,
+                                    device=sub_tensor.device,
+                                )
+                                # ノイズを適用
+                                target_params[i].copy_(
+                                    sub_tensor + noise_tensor
+                                )
 
     def train(self):
         super().train()
@@ -1012,26 +1087,6 @@ class CQCAgent_network(Agent):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        with torch.no_grad():
-            iter = 0
-            alpha = 0.2
-            noise_strength = lambda d: 1 / (10.0 ** (-alpha / 10.0 * d)) - 1
-            noise = noise_strength(self.d)
-            if self.network_model == 1:
-                iter = self.n_qubits * 2 * 2
-            elif self.network_model == 2:
-                iter = self.n_qubits * 2
-            for i in range(iter):
-                if self.noised:
-                    self.optimizer.param_groups[0]["params"][2][i] = (
-                        torch.normal(
-                            mean=self.optimizer.param_groups[0]["params"][2][
-                                i
-                            ].item(),
-                            std=noise,
-                            size=(1, 1),
-                        )
-                    )
 
         return self.loss_v
 

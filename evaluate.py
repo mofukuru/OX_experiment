@@ -3,6 +3,8 @@ import os
 
 import torch
 import tqdm
+import numpy as np
+import matplotlib.pyplot as plt
 
 from src.agent import (
     CNNAgent,
@@ -13,10 +15,24 @@ from src.agent import (
 )
 from src.env import Environment
 
+# Eloレーティング計算の定数
+K_FACTOR = 32
+INITIAL_RATING = 1500
 
-def get_agent_from_config(model_path):
+
+def calculate_expected_score(rating_a, rating_b):
+    """Eloレーティングにおける期待勝率を計算する"""
+    return 1 / (1 + 10 ** ((rating_b - rating_a) / 400))
+
+
+def get_agent_from_config(model_path, override_noised=None, override_distance=None):
     """
     モデルパスから設定を読み込み、エージェントを初期化する。
+
+    Args:
+        model_path: モデルファイルのパス
+        override_noised: noised設定を上書きする値（None以外の場合）
+        override_distance: distance設定を上書きする値（None以外の場合）
     """
     base_name = os.path.splitext(os.path.basename(model_path))[0]
     log_path = os.path.join("./logs/train/", f"{base_name}.json")
@@ -58,6 +74,10 @@ def get_agent_from_config(model_path):
             ansatz_reps=config.get("ansatz_reps"),
         )
     elif agent_class_name == "CQCAgent_network":
+        # noised と distance の設定を取得（上書き値があればそれを使用）
+        noised = override_noised if override_noised is not None else config.get("noised")
+        distance = override_distance if override_distance is not None else config.get("distance")
+
         agent = CQCAgent_network(
             embedding_type=config.get("embedding_type"),
             ansatz_type=config.get("ansatz_type"),
@@ -66,8 +86,8 @@ def get_agent_from_config(model_path):
             n_qubits=config.get("n_qubits"),
             feature_map_reps=config.get("feature_map_reps"),
             ansatz_reps=config.get("ansatz_reps"),
-            noised=config.get("noised"),
-            distance=config.get("distance"),
+            noised=noised,
+            distance=distance,
         )
     else:
         raise ValueError(
@@ -92,7 +112,17 @@ def get_agent_from_config(model_path):
     return agent
 
 
-def run_evaluation(model_path1: str, model_path2: str, num_games: int = 100):
+def run_evaluation(
+    model_path1: str,
+    model_path2: str,
+    num_games: int = 100,
+    track_rating: bool = False,
+    rating_interval: int = 100,
+    override_noised1: bool = None,
+    override_distance1: float = None,
+    override_noised2: bool = None,
+    override_distance2: float = None
+):
     """
     2つのモデルを対戦させ、結果を評価・保存する。
 
@@ -100,19 +130,39 @@ def run_evaluation(model_path1: str, model_path2: str, num_games: int = 100):
         model_path1: プレイヤー1のモデルへのパス。
         model_path2: プレイヤー2のモデルへのパス ("random"も可)。
         num_games: 対戦するゲーム数。
+        track_rating: レーティングの推移を追跡するかどうか。
+        rating_interval: レーティングを計算する間隔（ゲーム数）。
+        override_noised1: プレイヤー1のnoisedパラメータを上書き（for_networkモデルのみ）。
+        override_distance1: プレイヤー1のdistanceパラメータを上書き（for_networkモデルのみ）。
+        override_noised2: プレイヤー2のnoisedパラメータを上書き（for_networkモデルのみ）。
+        override_distance2: プレイヤー2のdistanceパラメータを上書き（for_networkモデルのみ）。
     """
     # エージェントの準備
-    agent1 = get_agent_from_config(model_path1)
+    agent1 = get_agent_from_config(
+        model_path1,
+        override_noised=override_noised1,
+        override_distance=override_distance1
+    )
     agent1.eval()
-    print("Player 1 Agent loaded from", model_path1)
+
+    # Noisedとdistanceの上書き情報を表示
+    noised_info1 = f" (override noised={override_noised1}, distance={override_distance1})" if (override_noised1 is not None or override_distance1 is not None) else ""
+    print(f"Player 1 Agent loaded from {model_path1}{noised_info1}")
 
     if model_path2.lower() == "random":
         agent2 = RandomPolicy()
         print("Player 2 is a RandomPolicy agent.")
     else:
-        agent2 = get_agent_from_config(model_path2)
+        agent2 = get_agent_from_config(
+            model_path2,
+            override_noised=override_noised2,
+            override_distance=override_distance2
+        )
         agent2.eval()
-        print("Player 2 Agent loaded from", model_path2)
+
+        # Noisedとdistanceの上書き情報を表示
+        noised_info2 = f" (override noised={override_noised2}, distance={override_distance2})" if (override_noised2 is not None or override_distance2 is not None) else ""
+        print(f"Player 2 Agent loaded from {model_path2}{noised_info2}")
 
     # 結果記録用
     results = {
@@ -122,6 +172,23 @@ def run_evaluation(model_path1: str, model_path2: str, num_games: int = 100):
         "summary": {"wins_p1": 0, "wins_p2": 0, "draws": 0},
         "game_logs": [],
     }
+
+    # レーティング追跡用
+    if track_rating:
+        results["rating_tracking"] = {
+            "intervals": [],
+            "rating_p1": [],
+            "rating_p2": [],
+            "win_rate_p1": [],
+            "win_rate_p2": [],
+            "draw_rate": []
+        }
+        # レーティング初期化
+        rating_p1 = INITIAL_RATING
+        rating_p2 = INITIAL_RATING
+        interval_wins_p1 = 0
+        interval_wins_p2 = 0
+        interval_draws = 0
 
     for i in tqdm.tqdm(
         range(num_games),
@@ -148,10 +215,51 @@ def run_evaluation(model_path1: str, model_path2: str, num_games: int = 100):
 
         if winner == 1:
             results["summary"]["wins_p1"] += 1
+            if track_rating:
+                interval_wins_p1 += 1
         elif winner == -1:
             results["summary"]["wins_p2"] += 1
+            if track_rating:
+                interval_wins_p2 += 1
         else:
             results["summary"]["draws"] += 1
+            if track_rating:
+                interval_draws += 1
+
+        # レーティングの計算と更新（指定された間隔ごと）
+        if track_rating and (i + 1) % rating_interval == 0:
+            # この間隔での勝率を計算
+            interval_games = interval_wins_p1 + interval_wins_p2 + interval_draws
+
+            # スコアを計算 (win=1, draw=0.5, loss=0)
+            score_p1 = interval_wins_p1 + 0.5 * interval_draws
+            score_p2 = interval_wins_p2 + 0.5 * interval_draws
+
+            # 期待勝率を計算
+            expected_p1 = calculate_expected_score(rating_p1, rating_p2) * interval_games
+            expected_p2 = calculate_expected_score(rating_p2, rating_p1) * interval_games
+
+            # レーティングを更新
+            rating_p1 = rating_p1 + K_FACTOR * (score_p1 - expected_p1) / interval_games
+            rating_p2 = rating_p2 + K_FACTOR * (score_p2 - expected_p2) / interval_games
+
+            # 間隔ごとの勝率を記録
+            win_rate_p1 = interval_wins_p1 / interval_games
+            win_rate_p2 = interval_wins_p2 / interval_games
+            draw_rate = interval_draws / interval_games
+
+            # レーティング推移を記録
+            results["rating_tracking"]["intervals"].append(i + 1)
+            results["rating_tracking"]["rating_p1"].append(float(rating_p1))
+            results["rating_tracking"]["rating_p2"].append(float(rating_p2))
+            results["rating_tracking"]["win_rate_p1"].append(float(win_rate_p1))
+            results["rating_tracking"]["win_rate_p2"].append(float(win_rate_p2))
+            results["rating_tracking"]["draw_rate"].append(float(draw_rate))
+
+            # 次の間隔のためにカウンターをリセット
+            interval_wins_p1 = 0
+            interval_wins_p2 = 0
+            interval_draws = 0
 
     # レーティング（勝率）の計算
     results["summary"]["win_rate_p1"] = (
@@ -182,15 +290,86 @@ def run_evaluation(model_path1: str, model_path2: str, num_games: int = 100):
         if model_path2.lower() != "random"
         else "random"
     )
-    log_path = os.path.join(log_dir, f"eval_{p1_name}_vs_{p2_name}.json")
+
+    # 上書きパラメータがある場合、ファイル名に追加
+    suffix = ""
+    if override_noised1 is not None or override_distance1 is not None:
+        suffix += f"_p1_noised{override_noised1}_dist{override_distance1}"
+    if override_noised2 is not None or override_distance2 is not None and model_path2.lower() != "random":
+        suffix += f"_p2_noised{override_noised2}_dist{override_distance2}"
+
+    log_path = os.path.join(log_dir, f"eval_{p1_name}_vs_{p2_name}{suffix}.json")
 
     with open(log_path, "w") as f:
         json.dump(results, f, indent=4)
 
     print(f"\nEvaluation results saved to {log_path}")
 
+    # レーティング推移をグラフとして保存
+    if track_rating and len(results["rating_tracking"]["intervals"]) > 0:
+        plt.figure(figsize=(12, 8))
+
+        # レーティング推移グラフ
+        plt.subplot(2, 1, 1)
+        plt.plot(
+            results["rating_tracking"]["intervals"],
+            results["rating_tracking"]["rating_p1"],
+            'b-',
+            label=f"Player 1 ({os.path.basename(model_path1)})"
+        )
+        plt.plot(
+            results["rating_tracking"]["intervals"],
+            results["rating_tracking"]["rating_p2"],
+            'r-',
+            label=f"Player 2 ({os.path.basename(model_path2)})"
+        )
+        plt.xlabel("Game Number")
+        plt.ylabel("Elo Rating")
+        plt.title("Elo Rating Progression")
+        plt.legend()
+        plt.grid(True)
+
+        # 勝率推移グラフ
+        plt.subplot(2, 1, 2)
+        plt.plot(
+            results["rating_tracking"]["intervals"],
+            results["rating_tracking"]["win_rate_p1"],
+            'b-',
+            label="Player 1 Win Rate"
+        )
+        plt.plot(
+            results["rating_tracking"]["intervals"],
+            results["rating_tracking"]["win_rate_p2"],
+            'r-',
+            label="Player 2 Win Rate"
+        )
+        plt.plot(
+            results["rating_tracking"]["intervals"],
+            results["rating_tracking"]["draw_rate"],
+            'g-',
+            label="Draw Rate"
+        )
+        plt.xlabel("Game Number")
+        plt.ylabel("Rate")
+        plt.title(f"Win/Draw Rate per {rating_interval} Games")
+        plt.legend()
+        plt.grid(True)
+
+        plt.tight_layout()
+
+        # グラフを保存
+        graph_path = os.path.join(log_dir, f"eval_{p1_name}_vs_{p2_name}{suffix}_rating.png")
+        plt.savefig(graph_path)
+        print(f"Rating progression graph saved to {graph_path}")
+
 
 if __name__ == "__main__":
     import fire
 
     fire.Fire(run_evaluation)
+
+    # 使用例:
+    # 基本的な評価: python evaluate.py model1.pth model2.pth --num_games=1000
+    # レーティング追跡: python evaluate.py model1.pth model2.pth --num_games=1000 --track_rating=True --rating_interval=100
+    # ノイズ設定の上書き: python evaluate.py model1.pth model2.pth --override_noised1=False --override_distance1=20.0
+    # 両方のモデルのノイズ設定を変更: python evaluate.py model1.pth model2.pth --override_noised1=True --override_distance1=10.0 --override_noised2=False --override_distance2=5.0

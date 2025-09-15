@@ -618,9 +618,9 @@ class CNN_QNN_CNN_sampler_for_network(nn.Module):
             input_gradients=True,
         )
         self.cqnn = nn.Sequential(
-            nn.Linear(9, self.num_qubits, bias=True),
+            nn.Linear(9, self.n_qubits, bias=True),
             TorchConnector(self.qnn),
-            nn.Linear(2**self.num_qubits, 9, bias=True),
+            nn.Linear(2**self.n_qubits, 9, bias=True),
             nn.Tanh(),
         )
 
@@ -683,19 +683,22 @@ class CNN_QNN_CNN_estimator_for_network(nn.Module):
             backend=set_backend.backend, optimization_level=1
         )
         self.isa_circuit = self.pm.run(self.circuit)
+        self.estimator = (
+            Estimator(backend=set_backend.backend, options={"shots": 1024})
+            if REAL_DEVICE
+            else BackendEstimator(
+                backend=set_backend.backend,
+                # options={"shots": 1024, "seed_simulator": SEED},
+                options={"shots": 1024},
+            )
+        )
         self.qnn = EstimatorQNN(
-            estimator=(
-                Estimator(backend=set_backend.backend, options={"shots": 1000})
-                if REAL_DEVICE
-                else BackendEstimator(
-                    backend=set_backend.backend,
-                    options={"shots": 1000, "seed_simulator": SEED},
-                )
-            ),
+            estimator=self.estimator,
             circuit=self.isa_circuit,
             observables=self.observable,
             input_params=feature_map_parameters,
             weight_params=ansatz_parameters,
+            gradient=SPSAEstimatorGradient(self.estimator),
             input_gradients=True,
         )
         self.cqnn = nn.Sequential(
