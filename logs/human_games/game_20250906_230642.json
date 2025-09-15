@@ -1,0 +1,43 @@
+{
+  "timestamp": "20250906_230642",
+  "player1": "Human",
+  "player2": "train_cqc_agent_episodes_5000_n_qubits_16_embedding_TPE_ansatz_RealAmplitudes_earlystop_eps0.1_nn_network_2.pth",
+  "winner": "Human",
+  "moves": [
+    {
+      "position": [
+        1,
+        1
+      ],
+      "player": 1
+    },
+    {
+      "position": [
+        0,
+        0
+      ],
+      "player": -1
+    },
+    {
+      "position": [
+        2,
+        1
+      ],
+      "player": 1
+    },
+    {
+      "position": [
+        2,
+        2
+      ],
+      "player": -1
+    },
+    {
+      "position": [
+        0,
+        1
+      ],
+      "player": 1
+    }
+  ]
+}

@@ -1,0 +1,615 @@
+{
+    "model1": "models/train/train_cnn_agent_CCNN_episodes_5000_n_qubits_10_earlystop_eps0.1.pth",
+    "model2": "random",
+    "num_games": 100,
+    "summary": {
+        "wins_p1": 61,
+        "wins_p2": 22,
+        "draws": 17,
+        "win_rate_p1": 0.61,
+        "win_rate_p2": 0.22,
+        "draw_rate": 0.17
+    },
+    "game_logs": [
+        {
+            "game_id": 0,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 1,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 2,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 3,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 4,
+            "starting_player": 1,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 5,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 5
+        },
+        {
+            "game_id": 6,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 7,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 8,
+            "starting_player": 1,
+            "winner": -1,
+            "move_count": 8
+        },
+        {
+            "game_id": 9,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 10,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 11,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 12,
+            "starting_player": 1,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 13,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 14,
+            "starting_player": 1,
+            "winner": -1,
+            "move_count": 6
+        },
+        {
+            "game_id": 15,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 16,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 17,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 18,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 19,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 20,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 7
+        },
+        {
+            "game_id": 21,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 5
+        },
+        {
+            "game_id": 22,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 7
+        },
+        {
+            "game_id": 23,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 24,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 25,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 26,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 27,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 28,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 29,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 8
+        },
+        {
+            "game_id": 30,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 31,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 32,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 33,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 34,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 7
+        },
+        {
+            "game_id": 35,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 5
+        },
+        {
+            "game_id": 36,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 37,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 38,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 39,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 40,
+            "starting_player": 1,
+            "winner": -1,
+            "move_count": 8
+        },
+        {
+            "game_id": 41,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 42,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 43,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 44,
+            "starting_player": 1,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 45,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 46,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 7
+        },
+        {
+            "game_id": 47,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 8
+        },
+        {
+            "game_id": 48,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 49,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 50,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 51,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 5
+        },
+        {
+            "game_id": 52,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 53,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 54,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 55,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 56,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 57,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 58,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 7
+        },
+        {
+            "game_id": 59,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 60,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 61,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 62,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 7
+        },
+        {
+            "game_id": 63,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 64,
+            "starting_player": 1,
+            "winner": -1,
+            "move_count": 8
+        },
+        {
+            "game_id": 65,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 66,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 67,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 68,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 69,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 70,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 7
+        },
+        {
+            "game_id": 71,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 5
+        },
+        {
+            "game_id": 72,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 7
+        },
+        {
+            "game_id": 73,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 74,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 75,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 76,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 77,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 78,
+            "starting_player": 1,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 79,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 7
+        },
+        {
+            "game_id": 80,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 81,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 82,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 83,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 8
+        },
+        {
+            "game_id": 84,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 85,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 86,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 87,
+            "starting_player": 2,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 88,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 89,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 5
+        },
+        {
+            "game_id": 90,
+            "starting_player": 1,
+            "winner": 0,
+            "move_count": 9
+        },
+        {
+            "game_id": 91,
+            "starting_player": 2,
+            "winner": -1,
+            "move_count": 5
+        },
+        {
+            "game_id": 92,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 93,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 94,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 95,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 8
+        },
+        {
+            "game_id": 96,
+            "starting_player": 1,
+            "winner": 1,
+            "move_count": 5
+        },
+        {
+            "game_id": 97,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        },
+        {
+            "game_id": 98,
+            "starting_player": 1,
+            "winner": -1,
+            "move_count": 6
+        },
+        {
+            "game_id": 99,
+            "starting_player": 2,
+            "winner": 1,
+            "move_count": 6
+        }
+    ]
+}
